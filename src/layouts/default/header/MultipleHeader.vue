@@ -6,7 +6,7 @@
   </div>
 </template>
 <script lang="ts">
-  import { defineComponent, unref, computed, CSSProperties } from 'vue';
+  import { defineComponent, unref, computed, CSSProperties, ref } from 'vue';
 
   import LayoutHeader from './index.vue';
   import MultipleTabs from '../tabs/index.vue';
@@ -15,7 +15,7 @@
   import { useMenuSetting } from '/@/hooks/setting/useMenuSetting';
   import { useFullContent } from '/@/hooks/web/useFullContent';
   import { useMultipleTabSetting } from '/@/hooks/setting/useMultipleTabSetting';
-  import { useAppInject } from '/@/hooks/web/useAppInject';
+  // import { useAppInject } from '/@/hooks/web/useAppInject';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { useLayoutHeight } from '../content/useContentViewHeight';
 
@@ -30,7 +30,9 @@
       const { prefixCls } = useDesign('layout-multiple-header');
 
       const { getCalcContentWidth, getSplit } = useMenuSetting();
-      const { getIsMobile } = useAppInject();
+      // const { getIsMobile } = useAppInject();
+      const getIsMobile = ref(true);
+
       const {
         getFixed,
         getShowInsetHeaderRef,

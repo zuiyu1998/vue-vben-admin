@@ -14,13 +14,13 @@
   <Sider v-else />
 </template>
 <script lang="ts">
-  import { defineComponent } from 'vue';
+  import { defineComponent, ref } from 'vue';
 
   import Sider from './LayoutSider.vue';
   import MixSider from './MixSider.vue';
   import { Drawer } from 'ant-design-vue';
 
-  import { useAppInject } from '/@/hooks/web/useAppInject';
+  // import { useAppInject } from '/@/hooks/web/useAppInject';
   import { useMenuSetting } from '/@/hooks/setting/useMenuSetting';
   import { useDesign } from '/@/hooks/web/useDesign';
   export default defineComponent({
@@ -28,7 +28,8 @@
     components: { Sider, Drawer, MixSider },
     setup() {
       const { prefixCls } = useDesign('layout-sider-wrapper');
-      const { getIsMobile } = useAppInject();
+      // const { getIsMobile } = useAppInject();
+      const getIsMobile = ref(true);
       const { setMenuSetting, getCollapsed, getMenuWidth, getIsMixSidebar } = useMenuSetting();
 
       function handleClose() {
