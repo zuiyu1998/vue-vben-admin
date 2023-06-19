@@ -11,7 +11,7 @@ import {
   Ref,
   watchEffect,
 } from 'vue';
-import { useTimeoutFn } from '/@/hooks/core/useTimeout';
+import { useTimeoutFn } from '@vben/hooks';
 import { buildUUID } from '/@/utils/uuid';
 import { isFunction, isBoolean, isObject } from '/@/utils/is';
 import { get, cloneDeep, merge } from 'lodash-es';
@@ -209,7 +209,7 @@ export function useDataSource(
   function insertTableDataRecord(
     record: Recordable | Recordable[],
     index: number,
-  ): Recordable | undefined {
+  ): Recordable[] | undefined {
     // if (!dataSourceRef.value || dataSourceRef.value.length == 0) return;
     index = index ?? dataSourceRef.value?.length;
     const _record = isObject(record) ? [record as Recordable] : (record as Recordable[]);
