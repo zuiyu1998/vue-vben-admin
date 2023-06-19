@@ -86,11 +86,13 @@ export const useUserStore = defineStore({
       params: LoginParams & {
         goHome?: boolean;
         mode?: ErrorMessageMode;
+        captcha?: string;
+        captchaId?:string;
       },
     ): Promise<GetUserInfoModel | null> {
       try {
         const { goHome = true, mode, ...loginParams } = params;
-        const data = await loginApi(loginParams, mode);
+        const data = await loginApi(loginParams);
         const { token } = data;
 
         // save token
