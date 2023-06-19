@@ -14,7 +14,11 @@
         v-model:value="formData.account"
         :placeholder="t('sys.login.userName')"
         class="fix-auto-fill"
-      />
+      >
+        <template #prefix>
+          <UserOutlined />
+        </template>
+      </Input>
     </FormItem>
     <FormItem name="password" class="enter-x">
       <InputPassword
@@ -22,7 +26,27 @@
         visibilityToggle
         v-model:value="formData.password"
         :placeholder="t('sys.login.password')"
-      />
+      >
+        <template #prefix>
+          <LockOutlined  />
+        </template>
+      </InputPassword>
+    </FormItem>
+    <FormItem name="captcha" class="enter-x">
+      <ARow :gutter="8">
+        <ACol :span="16">
+          <Input
+            size="large"
+            v-model:value="formData.captcha"
+            placeholder="验证码"
+            class="fix-auto-fill"
+            style="min-width: 100%"
+          />
+        </ACol>
+        <ACol :span="8">
+          <AImage :preview="false" :width="100" :src="captchaImg" @click="handleRefreshCode" />
+        </ACol>
+      </ARow>
     </FormItem>
 
     <ARow class="enter-x">
@@ -37,9 +61,9 @@
       <ACol :span="12">
         <FormItem :style="{ 'text-align': 'right' }">
           <!-- No logic, you need to deal with it yourself -->
-          <Button type="link" size="small" @click="setLoginState(LoginStateEnum.RESET_PASSWORD)">
+          <!-- <Button type="link" size="small" @click="setLoginState(LoginStateEnum.RESET_PASSWORD)">
             {{ t('sys.login.forgetPassword') }}
-          </Button>
+          </Button> -->
         </FormItem>
       </ACol>
     </ARow>
@@ -52,7 +76,7 @@
         {{ t('sys.login.registerButton') }}
       </Button> -->
     </FormItem>
-    <ARow class="enter-x">
+    <!-- <ARow class="enter-x">
       <ACol :md="8" :xs="24">
         <Button block @click="setLoginState(LoginStateEnum.MOBILE)">
           {{ t('sys.login.mobileSignInFormTitle') }}
@@ -68,9 +92,9 @@
           {{ t('sys.login.registerButton') }}
         </Button>
       </ACol>
-    </ARow>
+    </ARow> -->
 
-    <Divider class="enter-x">{{ t('sys.login.otherSignIn') }}</Divider>
+    <!-- <Divider class="enter-x">{{ t('sys.login.otherSignIn') }}</Divider>
 
     <div class="flex justify-evenly enter-x" :class="`${prefixCls}-sign-in-way`">
       <GithubFilled />
@@ -78,20 +102,13 @@
       <AlipayCircleFilled />
       <GoogleCircleFilled />
       <TwitterCircleFilled />
-    </div>
+    </div> -->
   </Form>
 </template>
 <script lang="ts" setup>
   import { reactive, ref, unref, computed } from 'vue';
-
-  import { Checkbox, Form, Input, Row, Col, Button, Divider } from 'ant-design-vue';
-  import {
-    GithubFilled,
-    WechatFilled,
-    AlipayCircleFilled,
-    GoogleCircleFilled,
-    TwitterCircleFilled,
-  } from '@ant-design/icons-vue';
+  import { Checkbox, Form, Input, Row, Col, Button, Image } from 'ant-design-vue';
+  import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
   import LoginFormTitle from './LoginFormTitle.vue';
 
   import { useI18n } from '/@/hooks/web/useI18n';
@@ -99,46 +116,54 @@
 
   import { useUserStore } from '/@/store/modules/user';
   import { LoginStateEnum, useLoginState, useFormRules, useFormValid } from './useLogin';
-  import { useDesign } from '/@/hooks/web/useDesign';
-  //import { onKeyStroke } from '@vueuse/core';
+  import dayjs from 'dayjs';
+  import { useGlobSetting } from '/@/hooks/setting';
+  import { cacheCipher } from '/@/settings/encryptionSetting';
+  import { AesEncryption } from '/@/utils/cipher';
 
   const ACol = Col;
   const ARow = Row;
   const FormItem = Form.Item;
   const InputPassword = Input.Password;
+  const AImage = Image;
   const { t } = useI18n();
-  const { notification, createErrorModal } = useMessage();
-  const { prefixCls } = useDesign('login');
+  const { notification } = useMessage();
+  // const { prefixCls } = useDesign('login');
   const userStore = useUserStore();
 
-  const { setLoginState, getLoginState } = useLoginState();
+  const { getLoginState } = useLoginState();
   const { getFormRules } = useFormRules();
 
   const formRef = ref();
   const loading = ref(false);
   const rememberMe = ref(false);
-
   const formData = reactive({
-    account: 'vben',
-    password: '123456',
+    account: '',
+    password: '',
+    captcha: '',
+    captchaId: dayjs().unix().toString(),
   });
-
   const { validForm } = useFormValid(formRef);
-
   //onKeyStroke('Enter', handleLogin);
-
   const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN);
 
+  const encryption = new AesEncryption({ key: cacheCipher.key, iv: cacheCipher.iv });
   async function handleLogin() {
     const data = await validForm();
     if (!data) return;
     try {
       loading.value = true;
-      const userInfo = await userStore.login({
-        password: data.password,
-        username: data.account,
-        mode: 'none', //不要默认的错误提示
-      });
+      const userInfo = await userStore
+        .login({
+          password: encryption.encryptByAES(data.password),
+          username: data.account,
+          captcha: data.captcha,
+          captchaId: formData.captchaId,
+          mode: 'none', //不要默认的错误提示
+        })
+        .catch(() => {
+          handleRefreshCode();
+        });
       if (userInfo) {
         notification.success({
           message: t('sys.login.loginSuccessTitle'),
@@ -147,13 +172,22 @@
         });
       }
     } catch (error) {
-      createErrorModal({
-        title: t('sys.api.errorTip'),
-        content: (error as unknown as Error).message || t('sys.api.networkExceptionMsg'),
-        getContainer: () => document.body.querySelector(`.${prefixCls}`) || document.body,
-      });
+      // createErrorModal({
+      //   title: t('sys.api.errorTip'),
+      //   content: (error as unknown as Error).message || t('sys.api.networkExceptionMsg'),
+      //   getContainer: () => document.body.querySelector(`.${prefixCls}`) || document.body,
+      // });
     } finally {
       loading.value = false;
     }
+  }
+
+  const globSetting = useGlobSetting();
+  const captchaImg = ref(
+    `${globSetting.apiUrl}/api/workshop/vben/VbenUser/${formData.captchaId}/Captcha`,
+  );
+  function handleRefreshCode() {
+    formData.captchaId = dayjs().unix().toString();
+    captchaImg.value = `${globSetting.apiUrl}/api/workshop/vben/VbenUser/${formData.captchaId}/Captcha`;
   }
 </script>
