@@ -79,11 +79,11 @@ export const useAppStore = defineStore({
     },
 
     setProjectConfig(config: DeepPartial<ProjectConfig>): void {
-      this.projectConfig = deepMerge(this.projectConfig || {}, config);
+      this.projectConfig = deepMerge(this.projectConfig || {}, config, ) as any;
       Persistent.setLocal(PROJ_CFG_KEY, this.projectConfig);
     },
     setMenuSetting(setting: Partial<MenuSetting>): void {
-      this.projectConfig.menuSetting = deepMerge(this.projectConfig.menuSetting, setting);
+      this.projectConfig!.menuSetting = deepMerge(this.projectConfig?.menuSetting, setting, ) as any;
       Persistent.setLocal(PROJ_CFG_KEY, this.projectConfig);
     },
 

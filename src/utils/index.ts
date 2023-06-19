@@ -3,7 +3,7 @@ import type { App, Component } from 'vue';
 
 import { intersectionWith, isEqual, mergeWith, unionWith } from 'lodash-es';
 import { unref } from 'vue';
-import { isArray, isObject } from '/@/utils/is';
+import { isArray, isObject, isNullOrUnDef } from '/@/utils/is';
 
 export const noop = () => {};
 
@@ -52,10 +52,10 @@ export function deepMerge<T extends object | null | undefined, U extends object 
   target: U,
   mergeArrays: 'union' | 'intersection' | 'concat' | 'replace' = 'replace',
 ): T & U {
-  if (!target) {
+  if (isNullOrUnDef(target)) {
     return source as T & U;
   }
-  if (!source) {
+  if (isNullOrUnDef(source)) {
     return target as T & U;
   }
   if (isArray(target) && isArray(source)) {
@@ -74,11 +74,11 @@ export function deepMerge<T extends object | null | undefined, U extends object 
     }
   }
   if (isObject(target) && isObject(source)) {
-    return mergeWith({}, target, source, (targetValue, sourceValue) => {
+    return mergeWith({}, source, target, (targetValue, sourceValue) => {
       return deepMerge(targetValue, sourceValue, mergeArrays);
     }) as T & U;
   }
-  return source as T & U;
+  return target as T & U;
 }
 
 export function openWindow(
